@@ -1,7 +1,7 @@
 --[[
 Be A Cat
 
-Version: 0.0.1
+Version: 0.1.0
 Last update: 28.02.2014
 Programmer: Wattanit Hotrakool (@rorasa)
             CannonLight Games
@@ -258,7 +258,7 @@ end
 function drawStart()
 	love.graphics.setFont(Fonts.default)
 	love.graphics.setColor(255,255,255,255)
-	love.graphics.print("Be A Cat 0.0.1")
+	love.graphics.print("Be A Cat 0.1.0")
 		
 	love.graphics.draw(SCContents.Start, 300,360)
 	love.graphics.draw(SCContents.Logo, 220,100)
