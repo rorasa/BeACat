@@ -1,7 +1,7 @@
 --[[
 Be A Cat
 
-Version: 0.1.0
+Version: 0.2.0
 Last update: 28.02.2014
 Programmer: Wattanit Hotrakool (@rorasa)
             CannonLight Games
@@ -9,6 +9,7 @@ Programmer: Wattanit Hotrakool (@rorasa)
 LÖVE version: 0.9.0
 ]]
 
+VersionNo = '0.2.0'
 
 ScreenMode = 0 --[[
 	0 = Start Screen
@@ -23,6 +24,7 @@ Targets = {}
 
 function love.load()
 	graphicsInit()
+	soundInit()
 	love.math.setRandomSeed( os.time() )
 end
 
@@ -66,9 +68,11 @@ function love.mousereleased(x,y,button)
 		checkClick(x,y)
 	elseif ScreenMode == 2 then
 		ScreenMode = 1
+		MenuSound:play()
 	elseif ScreenMode == 3 then
 		if x > 260 and x<510 and y > 450 and y < 500 then
 			ScreenMode = 0
+			MenuSound:play()
 		end
 	else
 		-- Start Game
@@ -76,13 +80,15 @@ function love.mousereleased(x,y,button)
 		GameScore = 0
 		GameLife = 9
 		ScreenMode = 2
+		
+		MenuSound:play()
 	end
 end
 
 -- ================== Game Functions ======================
 
 function createYarn(dt)
-	if #Targets < 2*GameLevel then
+	if #Targets < maxTargets() then
 		local newYarnChance = love.math.random()
 		if newYarnChance<0.5 then
 			local newYarnDirection = love.math.random()
@@ -91,6 +97,7 @@ function createYarn(dt)
 			Target.score = 100
 			Target.width = 50
 			Target.height = 50
+			Target.speed = 25
 			if newYarnDirection < 0.5 then 
 				Target.direction = "right"
 				Target.x = -Target.width+50
@@ -105,7 +112,7 @@ function createYarn(dt)
 end
 
 function createBird(dt)
-	if #Targets < 2*GameLevel and GameLevel >= 2 then
+	if #Targets < maxTargets() and GameLevel >= 2 then
 		local newBirdChance = love.math.random()
 		if newBirdChance<0.5 then
 			local Target = {}
@@ -113,6 +120,7 @@ function createBird(dt)
 			Target.score = 150
 			Target.width = 70
 			Target.height = 58
+			Target.speed = 30
 			local newBirdDirection = love.math.random()
 			if newBirdDirection < 0.5 then 
 				Target.direction = "right"
@@ -128,7 +136,7 @@ function createBird(dt)
 end
 
 function createMouse(dt)
-	if #Targets < 2*GameLevel and GameLevel >= 3 then
+	if #Targets < maxTargets() and GameLevel >= 3 then
 		local newMouseChance = love.math.random()
 		if newMouseChance<0.5 then
 			local Target = {}
@@ -137,6 +145,7 @@ function createMouse(dt)
 			Target.width = 62
 			Target.height = 65
 			Target.move = 0
+			Target.moveInterval = 1
 			Target.life = 0
 			Target.maxLife = 3
 			Target.x = (love.math.random()*600)+100
@@ -146,34 +155,32 @@ function createMouse(dt)
 	end
 end
 
+function maxTargets()
+	--return 2*GameLevel;
+	return 2+(GameLevel-1);
+end
+
 function updateTargets(dt)
 	for i,v in ipairs(Targets) do
 	
-		if v.type == "yarn" then
-			-- move yarns
+		if v.type == "yarn" or v.type == "bird" then
+			-- move yarns and birds
 			if v.direction == "right" then
-				v.x = v.x+(GameLevel*25*dt)
+				v.x = v.x+((1.2^(GameLevel-1))*v.speed*dt)
 			else
-				v.x = v.x-(GameLevel*25*dt)
-			end
-		end
-	
-		if v.type == "bird" then
-			-- move birds
-			if v.direction == "right" then
-				v.x = v.x+(GameLevel*30*dt)
-			else
-				v.x = v.x-(GameLevel*30*dt)
+				v.x = v.x-((1.2^(GameLevel-1))*v.speed*dt)
 			end
 		end
 		
 		if v.type == "mouse" then
 			-- move mouse, randomly
 			v.move = v.move + dt
-			if v.move >= 1 then
+			if v.move >= v.moveInterval then
 				v.x = (love.math.random()*600)+100
 				v.y = (love.math.random()*130)+400
 				v.move = 0
+				
+				MouseSound:play()
 			end
 			
 			v.life = v.life + dt
@@ -182,6 +189,7 @@ function updateTargets(dt)
 				table.remove(Targets,i)
 				GameLife = GameLife-1
 			end
+		
 		end
 		
 		-- remove targets outside screen
@@ -226,10 +234,17 @@ function gameOverCheck()
 		for i,_ in ipairs(Targets) do
 			table.remove(Targets,i)
 		end
+		EndSound:play()
 	end
 end
 
 -- ================ Graphic functions =====================
+
+function soundInit()
+	MenuSound = love.audio.newSource("sounds/Menu.wav", "static")
+	MouseSound = love.audio.newSource("sounds/Mouse.wav", "static")
+	EndSound = love.audio.newSource("sounds/Well_done.ogg")	
+end
 
 function graphicsInit()
 	-- load font
@@ -258,7 +273,7 @@ end
 function drawStart()
 	love.graphics.setFont(Fonts.default)
 	love.graphics.setColor(255,255,255,255)
-	love.graphics.print("Be A Cat 0.1.0")
+	love.graphics.print("Be A Cat "..VersionNo)
 		
 	love.graphics.draw(SCContents.Start, 300,360)
 	love.graphics.draw(SCContents.Logo, 220,100)
